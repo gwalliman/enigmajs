@@ -88,16 +88,15 @@ class Rotor {
   }
 
   leftSignal(inputIndex) {
-    var outerRingIndex = mod26(inputIndex + this.rotorPosition);
-    var offset = this.offsets[mod26(outerRingIndex + this.ringPosition)];
-    console.log(offset);
+    var outerRingIndex = mod26(inputIndex + this.rotorPosition - this.ringPosition);
+    var offset = this.offsets[outerRingIndex];
     console.log(this.alphabet[outerRingIndex] + ' -> ' + this.alphabet[mod26(inputIndex + offset)]);
     return this.leftModule.leftSignal(mod26(inputIndex + offset));
   }
 
   rightSignal(inputIndex) {
-    var innerRingIndex = mod26(inputIndex + this.rotorPosition);
-    var offset = this.offsetsTranslation[mod26(innerRingIndex - this.ringPosition)];
+    var innerRingIndex = mod26(inputIndex + this.rotorPosition - this.ringPosition);
+    var offset = this.offsetsTranslation[innerRingIndex];
     console.log(this.alphabet[innerRingIndex] + ' -> ' + this.alphabet[mod26(inputIndex + offset)]);
     return this.rightModule.rightSignal(mod26(inputIndex + offset));
   }
@@ -260,13 +259,17 @@ class Enigma {
 var rotorI = new Rotor('EKMFLGDQVZNTOWYHXUSPAIBRCJ', 16);
 var rotorII = new Rotor('AJDKSIRUXBLHWTMCQGZNPYFVOE', 4);
 var rotorIII = new Rotor('BDFHJLCPRTXVZNYEIWGAKMUSQO', 21);
+var rotorIV = new Rotor('ESOVPZJAYQUIRHXLNFTGKDCMWB', 9);
+var rotorV = new Rotor('VZBRGITYUPSDNHLXAWMJQOFECK', 25);
+
 var reflectorB = new Reflector('YRUHQSLDPXNGOKMIEBFZCWVJAT');
+var reflectorC = new Reflector('FVPJIAOYEDRZXWGCTKUQSBNMHL');
 
 var enigma = new Enigma();
 enigma.installRotors(rotorI, rotorII, rotorIII);
 enigma.installReflector(reflectorB);
 enigma.setRotorPositions(7, 3, 23);
-enigma.setRingPositions(0, 0, 0);
+enigma.setRingPositions(21, 9, 1);
 
 var keyPress = function(e) {
   var inputLetter = String.fromCharCode(e.which);
