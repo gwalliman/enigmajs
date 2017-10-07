@@ -147,9 +147,7 @@ class Reflector {
 }
 
 class Keyboard {
-  constructor() {
-    this.alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  }
+  constructor() {}
 
   moduleType() {
     return 'keyboard';
@@ -160,21 +158,12 @@ class Keyboard {
   }
 
   keyPress(character) {
-    var inputIndex = this.alphabet.findIndex(function(element) {
-      return element == character;
-    });
-
-    return this.leftModule.leftSignal(inputIndex);
-  }
-
-  rightSignal(index) {
-    return this.alphabet[index];
+    return this.leftModule.leftSignal(character);
   }
 }
 
 class Lampboard {
   constructor() {
-    this.alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     this.displayCharacter = '';
   }
 
@@ -182,12 +171,8 @@ class Lampboard {
     return 'lampboard';
   }
 
-  setLeftModule(leftModule) {
-    this.leftModule = leftModule;
-  }
-
-  rightSignal(index) {
-    this.displayCharacter = this.alphabet[index];
+  rightSignal(character) {
+    this.displayCharacter = character;
   }
 
   getDisplayCharacter() {
@@ -195,10 +180,37 @@ class Lampboard {
   }
 }
 
+class EntryWheel {
+  constructor() {
+    this.alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  }
+
+  moduleType() {
+    return 'entryWheel';
+  }
+
+  setLeftModule(leftModule) {
+    this.leftModule = leftModule;
+  }
+
+  setRightModule(rightModule) {
+    this.rightModule = rightModule;
+  }
+
+  leftSignal(character) {
+    this.leftModule.leftSignal(findCharacter(this.alphabet, character));
+  }
+
+  rightSignal(index) {
+    this.rightModule.rightSignal(this.alphabet[index]);
+  }
+}
+
 class Enigma {
   constructor() {
     this.keyboard = new Keyboard();
     this.lampboard = new Lampboard();
+    this.entryWheel = new EntryWheel();
     this.rotorsInstalled = false;
     this.reflectorsInstalled = false;
   }
@@ -210,12 +222,14 @@ class Enigma {
 
     this.leftRotor.setRightModule(this.middleRotor);
     this.middleRotor.setRightModule(this.rightRotor);
-    this.rightRotor.setRightModule(this.lampboard);
+    this.rightRotor.setRightModule(this.entryWheel);
+    this.entryWheel.setRightModule(this.lampboard);
 
-    this.middleRotor.setLeftModule(this.leftRotor);
+    this.keyboard.setLeftModule(this.entryWheel);
+    this.entryWheel.setLeftModule(this.rightRotor);
     this.rightRotor.setLeftModule(this.middleRotor);
-    this.keyboard.setLeftModule(this.rightRotor);
-    this.lampboard.setLeftModule(this.rightRotor);
+    this.middleRotor.setLeftModule(this.leftRotor);
+
 
     this.setRotorPositions(0, 0, 0);
     this.setRingPositions(0, 0, 0);
