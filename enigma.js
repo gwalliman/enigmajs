@@ -172,9 +172,33 @@ class Keyboard {
   }
 }
 
+class Lampboard {
+  constructor() {
+    this.alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    this.displayCharacter = '';
+  }
+
+  moduleType() {
+    return 'lampboard';
+  }
+
+  setLeftModule(leftModule) {
+    this.leftModule = leftModule;
+  }
+
+  rightSignal(index) {
+    this.displayCharacter = this.alphabet[index];
+  }
+
+  getDisplayCharacter() {
+    return this.displayCharacter;
+  }
+}
+
 class Enigma {
   constructor() {
     this.keyboard = new Keyboard();
+    this.lampboard = new Lampboard();
     this.rotorsInstalled = false;
     this.reflectorsInstalled = false;
   }
@@ -186,11 +210,12 @@ class Enigma {
 
     this.leftRotor.setRightModule(this.middleRotor);
     this.middleRotor.setRightModule(this.rightRotor);
-    this.rightRotor.setRightModule(this.keyboard);
+    this.rightRotor.setRightModule(this.lampboard);
 
     this.middleRotor.setLeftModule(this.leftRotor);
     this.rightRotor.setLeftModule(this.middleRotor);
     this.keyboard.setLeftModule(this.rightRotor);
+    this.lampboard.setLeftModule(this.rightRotor);
 
     this.setRotorPositions(0, 0, 0);
     this.setRingPositions(0, 0, 0);
@@ -252,7 +277,11 @@ class Enigma {
     var rightCharacter = this.rightRotor.getDisplayCharacter();
     console.log(leftCharacter + middleCharacter + rightCharacter);
 
-    return this.keyboard.keyPress(character);
+    this.keyboard.keyPress(character);
+  }
+
+  readLampboard() {
+    return this.lampboard.getDisplayCharacter();
   }
 }
 
@@ -275,6 +304,7 @@ var keyPress = function(e) {
   var inputLetter = String.fromCharCode(e.which);
   var outputText = document.getElementById('outputTextArea');
 
-  var outputLetter = enigma.keyPress(inputLetter);
+  enigma.keyPress(inputLetter);
+  var outputLetter = enigma.readLampboard();
   outputText.value = outputText.value + outputLetter;
 };
