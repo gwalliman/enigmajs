@@ -17,32 +17,46 @@ class Rotor {
     this.alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     this.translation = mapping.split('');
     this.actuationPosition = actuationPosition;
+
     this.offsets = [];
     this.offsetsTranslation = [];
 
-    var alphabetString = '';
-    var translationString = '';
     for(var x = 0; x < this.alphabet.length; x++) {
       var originalCharacter = this.alphabet[x];
       var soughtCharacter = this.translation[x];
-      var originalCharacterPosition = findCharacter(this.alphabet, originalCharacter);
+
+      var originalCharacterPosition = x;
       var soughtCharacterPosition = findCharacter(this.alphabet, soughtCharacter);
+
       var offset = mod26(soughtCharacterPosition - originalCharacterPosition);
+
       this.offsets.push(offset);
       this.offsetsTranslation[soughtCharacterPosition] = -offset;
-      
-      alphabetString += originalCharacter;
-      translationString += soughtCharacter;
     }
-
-    console.log(alphabetString);
-    console.log(this.offsets);
-    console.log(this.offsetsTranslation);
-    console.log(translationString);
   }
 
   moduleType() {
     return 'rotor';
+  }
+
+  getDisplayCharacter() {
+    return this.alphabet[this.getRotorPosition()];
+  }
+
+  readyToActuate() {
+    return this.getActuationPosition() == this.getRotorPosition();
+  }
+
+  isLeftRotor() {
+    return this.leftModule.moduleType() != 'rotor';
+  }
+
+  isMiddleRotor() {
+    return !this.isLeftRotor() && !this.isRightRotor();
+  }
+
+  isRightRotor() {
+    return this.rightModule.moduleType() != 'rotor';
   }
 
   setLeftModule(leftModule) {
@@ -69,40 +83,23 @@ class Rotor {
     this.ringPosition = mod26(ringPosition);
   }
 
+  getActuationPosition() {
+    return this.actuationPosition;
+  }
+
   leftSignal(inputIndex) {
-    var outerRingIndex = mod26(inputIndex + this.rotorPosition + this.ringPosition);
-    var offset = this.offsets[outerRingIndex];
+    var outerRingIndex = mod26(inputIndex + this.rotorPosition);
+    var offset = this.offsets[mod26(outerRingIndex + this.ringPosition)];
+    console.log(offset);
+    console.log(this.alphabet[outerRingIndex] + ' -> ' + this.alphabet[mod26(inputIndex + offset)]);
     return this.leftModule.leftSignal(mod26(inputIndex + offset));
   }
 
   rightSignal(inputIndex) {
-    var innerRingIndex = mod26(inputIndex + this.rotorPosition + this.ringPosition);
-    var offset = this.offsetsTranslation[innerRingIndex];
+    var innerRingIndex = mod26(inputIndex + this.rotorPosition);
+    var offset = this.offsetsTranslation[mod26(innerRingIndex - this.ringPosition)];
+    console.log(this.alphabet[innerRingIndex] + ' -> ' + this.alphabet[mod26(inputIndex + offset)]);
     return this.rightModule.rightSignal(mod26(inputIndex + offset));
-  }
-
-  getActuationPosition() {
-    return this.actuationPosition;
-  }
-  
-  getDisplayCharacter() {
-    return this.alphabet[this.getRotorPosition()];
-  }
-
-  readyToActuate() {
-    return this.getActuationPosition() == this.getRotorPosition();
-  }
-
-  isLeftRotor() {
-    return this.leftModule.moduleType() != 'rotor';
-  }
-
-  isMiddleRotor() {
-    return !this.isLeftRotor() && !this.isRightRotor();
-  }
-
-  isRightRotor() {
-    return this.rightModule.moduleType() != 'rotor';
   }
 
   rotate() {
@@ -120,8 +117,6 @@ class Rotor {
         this.rightModule.rotate();
       }
     }
-
-    return this.getDisplayCharacter();
   }
 }
 
@@ -145,6 +140,8 @@ class Reflector {
     var innerRingIndex = this.alphabet.findIndex(function(element) {
       return element == innerRingCharacter;
     });
+
+    console.log(outerRingCharacter + ' => ' + innerRingCharacter);
 
     return this.rightModule.rightSignal(innerRingIndex);
   };
@@ -223,7 +220,6 @@ class Enigma {
     this.rightRotor.setRingPosition(rightRingPosition);
   }
 
-
   checkSetup() {
     var status = '';
     if(!this.rotorsInstalled) {
@@ -237,16 +233,24 @@ class Enigma {
     return status;
   }
 
+  actuateRotors() {
+    this.leftRotor.actuate();
+    this.middleRotor.actuate();
+    this.rightRotor.actuate();
+  }
+
   keyPress(character) {
     var status = this.checkSetup();
+
     if(status != '') {
       return status;
     }
 
-    var leftCharacter = this.leftRotor.actuate();
-    var middleCharacter = this.middleRotor.actuate();
-    var rightCharacter = this.rightRotor.actuate();
+    this.actuateRotors(); 
 
+    var leftCharacter = this.leftRotor.getDisplayCharacter();
+    var middleCharacter = this.middleRotor.getDisplayCharacter();
+    var rightCharacter = this.rightRotor.getDisplayCharacter();
     console.log(leftCharacter + middleCharacter + rightCharacter);
 
     return this.keyboard.keyPress(character);
