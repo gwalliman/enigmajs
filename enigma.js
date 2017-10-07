@@ -39,6 +39,14 @@ class Rotor {
     return 'rotor';
   }
 
+  setLeftModule(leftModule) {
+    this.leftModule = leftModule;
+  }
+
+  setRightModule(rightModule) {
+    this.rightModule = rightModule;
+  }
+
   getDisplayCharacter() {
     return this.alphabet[this.getRotorPosition()];
   }
@@ -58,15 +66,7 @@ class Rotor {
   isRightRotor() {
     return this.rightModule.moduleType() != 'rotor';
   }
-
-  setLeftModule(leftModule) {
-    this.leftModule = leftModule;
-  }
-
-  setRightModule(rightModule) {
-    this.rightModule = rightModule;
-  }
-
+  
   getRotorPosition() {
     return this.rotorPosition;
   }
@@ -206,11 +206,54 @@ class EntryWheel {
   }
 }
 
+class Plugboard {
+  constructor() {
+    var alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    this.plugs = {};
+
+    for(var x = 0; x < alphabet.length; x++) {
+      var character = alphabet[x];
+      this.plugs[character] = character;
+    }
+  }
+
+  moduleType() {
+    return 'plugboard';
+  }
+
+  setLeftModule(leftModule) {
+    this.leftModule = leftModule;
+  }
+
+  setRightModule(rightModule) {
+    this.rightModule = rightModule;
+  }
+
+  addPlug(char1, char2) {
+    this.plugs[char1] = char2;
+    this.plugs[char2] = char1;
+  }
+
+  removePlug(char1, char2) {
+    this.plugs[char1] = char1;
+    this.plugs[char2] = char1;
+  }
+
+  leftSignal(character) {
+    this.leftModule.leftSignal(this.plugs[character]);
+  }
+
+  rightSignal(character) {
+    this.rightModule.rightSignal(this.plugs[character]);
+  }
+}
+
 class Enigma {
   constructor() {
     this.keyboard = new Keyboard();
     this.lampboard = new Lampboard();
     this.entryWheel = new EntryWheel();
+    this.plugboard = new Plugboard();
     this.rotorsInstalled = false;
     this.reflectorsInstalled = false;
   }
@@ -223,13 +266,14 @@ class Enigma {
     this.leftRotor.setRightModule(this.middleRotor);
     this.middleRotor.setRightModule(this.rightRotor);
     this.rightRotor.setRightModule(this.entryWheel);
-    this.entryWheel.setRightModule(this.lampboard);
+    this.entryWheel.setRightModule(this.plugboard);
+    this.plugboard.setRightModule(this.lampboard);
 
-    this.keyboard.setLeftModule(this.entryWheel);
+    this.keyboard.setLeftModule(this.plugboard);
+    this.plugboard.setLeftModule(this.entryWheel);
     this.entryWheel.setLeftModule(this.rightRotor);
     this.rightRotor.setLeftModule(this.middleRotor);
     this.middleRotor.setLeftModule(this.leftRotor);
-
 
     this.setRotorPositions(0, 0, 0);
     this.setRingPositions(0, 0, 0);
@@ -244,6 +288,10 @@ class Enigma {
     this.leftRotor.setLeftModule(this.reflector);
 
     this.reflectorsInstalled = true;
+  }
+
+  installPlug(char1, char2) {
+    this.plugboard.addPlug(char1, char2);
   }
 
   setRotorPositions(leftRotorPosition, middleRotorPosition, rightRotorPosition) {
@@ -313,6 +361,8 @@ enigma.installRotors(rotorI, rotorII, rotorIII);
 enigma.installReflector(reflectorB);
 enigma.setRotorPositions(7, 3, 23);
 enigma.setRingPositions(21, 9, 1);
+enigma.installPlug('A', 'B');
+enigma.installPlug('G', 'V');
 
 var keyPress = function(e) {
   var inputLetter = String.fromCharCode(e.which);
