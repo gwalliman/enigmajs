@@ -6,11 +6,39 @@ var mod26 = function(input) {
   return input % 26;
 }
 
+var findCharacter = function(array, character) {
+  return mod26(array.findIndex(function(element) {
+    return element == character;
+  }));
+}
+
 class Rotor {
   constructor(mapping, actuationPosition) {
     this.alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     this.translation = mapping.split('');
     this.actuationPosition = actuationPosition;
+    this.offsets = [];
+    this.offsetsTranslation = [];
+
+    var alphabetString = '';
+    var translationString = '';
+    for(var x = 0; x < this.alphabet.length; x++) {
+      var originalCharacter = this.alphabet[x];
+      var soughtCharacter = this.translation[x];
+      var originalCharacterPosition = findCharacter(this.alphabet, originalCharacter);
+      var soughtCharacterPosition = findCharacter(this.alphabet, soughtCharacter);
+      var offset = mod26(soughtCharacterPosition - originalCharacterPosition);
+      this.offsets.push(offset);
+      this.offsetsTranslation[soughtCharacterPosition] = -offset;
+      
+      alphabetString += originalCharacter;
+      translationString += soughtCharacter;
+    }
+
+    console.log(alphabetString);
+    console.log(this.offsets);
+    console.log(this.offsetsTranslation);
+    console.log(translationString);
   }
 
   moduleType() {
@@ -43,24 +71,14 @@ class Rotor {
 
   leftSignal(inputIndex) {
     var outerRingIndex = mod26(inputIndex + this.rotorPosition + this.ringPosition);
-    var outerRingCharacter = this.alphabet[outerRingIndex];
-    var innerRingCharacter = this.translation[outerRingIndex];
-    var innerRingIndex = mod26(this.alphabet.findIndex(function(element) {
-      return element == innerRingCharacter;
-    }) - this.rotorPosition - this.ringPosition);
-
-    return this.leftModule.leftSignal(innerRingIndex);
+    var offset = this.offsets[outerRingIndex];
+    return this.leftModule.leftSignal(mod26(inputIndex + offset));
   }
 
   rightSignal(inputIndex) {
     var innerRingIndex = mod26(inputIndex + this.rotorPosition + this.ringPosition);
-    var innerRingCharacter = this.alphabet[innerRingIndex];
-    var translationIndex = this.translation.findIndex(function(element) {
-      return element == innerRingCharacter;
-    });
-    var translationCharacter = this.alphabet[translationIndex];
-
-    return this.rightModule.rightSignal(mod26(translationIndex - this.rotorPosition - this.ringPosition));
+    var offset = this.offsetsTranslation[innerRingIndex];
+    return this.rightModule.rightSignal(mod26(inputIndex + offset));
   }
 
   getActuationPosition() {
@@ -244,7 +262,7 @@ var enigma = new Enigma();
 enigma.installRotors(rotorI, rotorII, rotorIII);
 enigma.installReflector(reflectorB);
 enigma.setRotorPositions(7, 3, 23);
-enigma.setRingPositions(0, 0, 1);
+enigma.setRingPositions(0, 0, 0);
 
 var keyPress = function(e) {
   var inputLetter = String.fromCharCode(e.which);
